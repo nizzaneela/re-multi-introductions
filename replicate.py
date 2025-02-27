@@ -36,20 +36,20 @@ def main(parameters_file_name: str, num_processors: int):
         shutil.copy2(parameters_file_name, os.path.join(analysis_dir, parameters_file_name))
         os.chdir(analysis_dir)
 
-    # # === Single introduction simulation and analysis ===
-    # # prepare lists to map to worker arguments
-    # directory_list = []
-    # parameter_list = []
-    # for i in range(NUM_SIMS):
-    #     directory_list.append(os.path.join("one_intro", str(i)))
-    #     parameter_list.append(parameters_file_name)
-    # seedseq_list = one_intro_seedseq.spawn(NUM_SIMS)
-    # # run workers - one for each successful introduction and its analysis
-    # with concurrent.futures.ProcessPoolExecutor(max_workers=num_processors) as executor:
-    #     futures = []
-    #     for directory, param, seedseq in zip(directory_list, parameter_list, seedseq_list):
-    #         futures.append(executor.submit(one_intro, directory, param, seedseq))
-    #     concurrent.futures.wait(futures)
+    # === Single introduction simulation and analysis ===
+    # prepare lists to map to worker arguments
+    directory_list = []
+    parameter_list = []
+    for i in range(NUM_SIMS):
+        directory_list.append(os.path.join("one_intro", str(i)))
+        parameter_list.append(parameters_file_name)
+    seedseq_list = one_intro_seedseq.spawn(NUM_SIMS)
+    # run workers - one for each successful introduction and its analysis
+    with concurrent.futures.ProcessPoolExecutor(max_workers=num_processors) as executor:
+        futures = []
+        for directory, param, seedseq in zip(directory_list, parameter_list, seedseq_list):
+            futures.append(executor.submit(one_intro, directory, param, seedseq))
+        concurrent.futures.wait(futures)
 
     # === Two introduction sampling and analysis ===
     # prepare lists to map to worker arguments
