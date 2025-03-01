@@ -214,6 +214,37 @@ def check_arises(AB, CC, output_dir, tree):
     # all passed?
     return AB, CC
 
+def check_not_identical(AB, CC, output_dir, tree, offset_0, offset_1):
+    """
+    :param AB, CC: 1 if topology is detected, 0 if not
+    :param output_dir: working directory
+    :param tree: tree with mutations attached at nodes
+    :param offset_0, offset_1: the times between the MRCA and each intro
+    :return AB, CC: As received if one intro has a mutation, else 0, 0
+    """
+    # get MRCA
+    leaf_labels = {leaf.get_label() for leaf in tree.traverse_leaves()}
+    mrca_node = tree.mrca(leaf_labels)
+    # check each clade root
+    for clade_root in mrca_node.child_nodes():
+        # check for mutations at clade root
+        if hasattr(clade_root, "mutations"):
+            # get mutation times
+            mutation_times = np.random.uniform(0, clade_root.get_edge_length(), size=clade_root.mutations)
+            # get clade lineage from leaf label
+            for leaf in clade_root.traverse_leaves():
+                label = leaf.get_label()
+                break
+            suffix = label.split("|").[1].split("_").[1]
+            # check if they happened before the intro for that lineage
+            if suffix == "0":
+                if np.any(arrival_times < offset_0):
+                    return AB, CC # if we have at leat one mutatated intro
+            else:
+                if np.any(arrival_times < offset_1):
+                    return AB, CC # if we have at leat one mutatated intro
+    return 0, 0 # no mutated intros
+
 
 def two_intro(output_dir, parameters_file_name, rng, id_0, id_1):
     """
@@ -237,6 +268,8 @@ def two_intro(output_dir, parameters_file_name, rng, id_0, id_1):
     # Create integer arrays for AB and CC
     AB_array = np.zeros((len(TMRCA_TO_INTRO_VALUES), len(TMRCA_TO_INTRO_VALUES)),dtype=int)
     CC_array = np.zeros((len(TMRCA_TO_INTRO_VALUES), len(TMRCA_TO_INTRO_VALUES)),dtype=int)
+    AB_FD_array = np.zeros((len(TMRCA_TO_INTRO_VALUES), len(TMRCA_TO_INTRO_VALUES)),dtype=int)
+    CC_FD_array = np.zeros((len(TMRCA_TO_INTRO_VALUES), len(TMRCA_TO_INTRO_VALUES)),dtype=int)
     for i0, t0 in enumerate(TMRCA_TO_INTRO_VALUES):
         for i1, t1 in enumerate(TMRCA_TO_INTRO_VALUES):
 
@@ -264,6 +297,12 @@ def two_intro(output_dir, parameters_file_name, rng, id_0, id_1):
             AB_array[i0, i1] += AB
             CC_array[i0, i1] += CC
 
+            # 6. Check if at least one introduction was not the ancestral haplotype
+            if AB or CC:
+                AB_FD, CC_FD = check_not_identical(AB, CC, output_dir, tree, offset_0, offset_1)
+                AB_FD_array[i0, i1] += AB_FD
+                CC_FD_array[i0, i1] += CC_FD
+
     # Write AB to file
     ab_path = os.path.join(output_dir, 'AB_array.csv')
     np.savetxt(ab_path, AB_array, delimiter=",", fmt='%d')
@@ -271,6 +310,14 @@ def two_intro(output_dir, parameters_file_name, rng, id_0, id_1):
     # Write CC to file
     cc_path = os.path.join(output_dir, 'CC_array.csv')
     np.savetxt(cc_path, CC_array, delimiter=",", fmt='%d')
+
+    # Write AB_FD to file
+    ab_fd_path = os.path.join(output_dir, 'AB_FD_array.csv')
+    np.savetxt(ab_fd_path, AB_FD_array, delimiter=",", fmt='%d')
+
+    # Write CC_FD to file
+    cc_fd_path = os.path.join(output_dir, 'CC_FD_array.csv')
+    np.savetxt(cc_fd_path, CC_FD_array, delimiter=",", fmt='%d')
 
     # store the final tree
     tree.write_tree_newick(os.path.join(output_dir, "final_tree.nwk"))
