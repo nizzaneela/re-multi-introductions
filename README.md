@@ -1,4 +1,4 @@
-
+This is a modified version that incorporates an additional test to exclude pairs of introductions that have the same haplotype as the MRCA.
 
 ## Instructions
 
