@@ -1,4 +1,4 @@
-This is a modified version that incorporates an additional test to exclude pairs of introductions that have the same haplotype as the MRCA.
+This is a modified version that incorporates an additional test to exclude pairs of introductions that have the same haplotype as the MRCA, outputting `AB_FD_array.csv` and `CC_FD_array.csv` in addition to the normal output.
 
 ## Instructions
 
